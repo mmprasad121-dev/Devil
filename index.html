@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>Level Devil Infinite</title>
   <style>
     body {
       margin: 0;
-      background: black;
+      background: #000;
       color: white;
-      font-family: Arial;
       text-align: center;
+      font-family: Arial;
     }
     canvas {
       background: #111;
@@ -16,13 +17,20 @@
       margin: auto;
       border: 2px solid red;
     }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
 
-<h2>😈 LEVEL DEVIL — INFINITE 😈</h2>
+<h2>😈 LEVEL DEVIL – INFINITE 😈</h2>
 <p>Level: <span id="level">1</span></p>
+
 <canvas id="game" width="600" height="300"></canvas>
+<button onclick="jump()">JUMP</button>
 
 <script>
 const canvas = document.getElementById("game");
@@ -30,36 +38,35 @@ const ctx = canvas.getContext("2d");
 
 let level = 1;
 
-let player = { x: 30, y: 250, w: 20, h: 20, dy: 0, onGround: false };
+let player = { x: 30, y: 240, w: 20, h: 20, dy: 0 };
 let gravity = 0.6;
-let jump = -10;
+let jumping = false;
 
 let traps = [];
 
 function generateLevel() {
   traps = [];
-  let count = level + 2;
+  let count = 3 + level;
 
   for (let i = 0; i < count; i++) {
     traps.push({
-      x: Math.random() * 500 + 50,
-      y: 270,
-      w: 30,
-      h: 30,
-      hidden: Math.random() > 0.5,
-      move: Math.random() > 0.6
+      x: 150 + Math.random() * 400,
+      y: 260,
+      w: 25,
+      h: 25,
+      active: Math.random() > 0.4
     });
   }
 }
 
 function resetPlayer() {
   player.x = 30;
-  player.y = 250;
+  player.y = 240;
   player.dy = 0;
+  jumping = false;
 }
 
 function die() {
-  alert("💀 YOU DIED");
   resetPlayer();
 }
 
@@ -70,44 +77,48 @@ function nextLevel() {
   generateLevel();
 }
 
-document.addEventListener("keydown", e => {
-  if (e.key === " " && player.onGround) {
-    player.dy = jump;
-    player.onGround = false;
+function jump() {
+  if (!jumping) {
+    player.dy = -10;
+    jumping = true;
   }
+}
+
+// keyboard support
+document.addEventListener("keydown", e => {
+  if (e.key === " ") jump();
 });
 
 generateLevel();
 
 function update() {
-  ctx.clearRect(0,0,600,300);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Player physics
+  // gravity
   player.dy += gravity;
   player.y += player.dy;
 
-  if (player.y + player.h >= 270) {
-    player.y = 270 - player.h;
+  // ground
+  if (player.y + player.h >= 260) {
+    player.y = 260 - player.h;
     player.dy = 0;
-    player.onGround = true;
+    jumping = false;
   }
 
-  player.x += 2 + level * 0.2;
+  // move forward
+  player.x += 1.5 + level * 0.2;
 
-  // Draw player
+  // draw player
   ctx.fillStyle = "lime";
   ctx.fillRect(player.x, player.y, player.w, player.h);
 
-  // Traps
+  // traps
+  ctx.fillStyle = "red";
   traps.forEach(t => {
-    if (t.move) t.x += Math.sin(Date.now()/300) * 1.5;
-
-    if (!t.hidden || player.x > t.x - 40) {
-      ctx.fillStyle = "red";
-      ctx.fillRect(t.x, t.y, t.w, t.h);
-    }
+    if (t.active) ctx.fillRect(t.x, t.y, t.w, t.h);
 
     if (
+      t.active &&
       player.x < t.x + t.w &&
       player.x + player.w > t.x &&
       player.y < t.y + t.h &&
@@ -117,13 +128,11 @@ function update() {
     }
   });
 
-  // Finish line
+  // finish
   ctx.fillStyle = "yellow";
-  ctx.fillRect(580, 230, 10, 40);
+  ctx.fillRect(580, 220, 10, 40);
 
-  if (player.x > 580) {
-    nextLevel();
-  }
+  if (player.x > 580) nextLevel();
 
   requestAnimationFrame(update);
 }
