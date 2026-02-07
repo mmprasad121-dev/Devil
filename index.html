@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Level Devil Infinite</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial;
+      text-align: center;
+    }
+    canvas {
+      background: #111;
+      display: block;
+      margin: auto;
+      border: 2px solid red;
+    }
+  </style>
+</head>
+<body>
+
+<h2>😈 LEVEL DEVIL — INFINITE 😈</h2>
+<p>Level: <span id="level">1</span></p>
+<canvas id="game" width="600" height="300"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let level = 1;
+
+let player = { x: 30, y: 250, w: 20, h: 20, dy: 0, onGround: false };
+let gravity = 0.6;
+let jump = -10;
+
+let traps = [];
+
+function generateLevel() {
+  traps = [];
+  let count = level + 2;
+
+  for (let i = 0; i < count; i++) {
+    traps.push({
+      x: Math.random() * 500 + 50,
+      y: 270,
+      w: 30,
+      h: 30,
+      hidden: Math.random() > 0.5,
+      move: Math.random() > 0.6
+    });
+  }
+}
+
+function resetPlayer() {
+  player.x = 30;
+  player.y = 250;
+  player.dy = 0;
+}
+
+function die() {
+  alert("💀 YOU DIED");
+  resetPlayer();
+}
+
+function nextLevel() {
+  level++;
+  document.getElementById("level").innerText = level;
+  resetPlayer();
+  generateLevel();
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === " " && player.onGround) {
+    player.dy = jump;
+    player.onGround = false;
+  }
+});
+
+generateLevel();
+
+function update() {
+  ctx.clearRect(0,0,600,300);
+
+  // Player physics
+  player.dy += gravity;
+  player.y += player.dy;
+
+  if (player.y + player.h >= 270) {
+    player.y = 270 - player.h;
+    player.dy = 0;
+    player.onGround = true;
+  }
+
+  player.x += 2 + level * 0.2;
+
+  // Draw player
+  ctx.fillStyle = "lime";
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+
+  // Traps
+  traps.forEach(t => {
+    if (t.move) t.x += Math.sin(Date.now()/300) * 1.5;
+
+    if (!t.hidden || player.x > t.x - 40) {
+      ctx.fillStyle = "red";
+      ctx.fillRect(t.x, t.y, t.w, t.h);
+    }
+
+    if (
+      player.x < t.x + t.w &&
+      player.x + player.w > t.x &&
+      player.y < t.y + t.h &&
+      player.y + player.h > t.y
+    ) {
+      die();
+    }
+  });
+
+  // Finish line
+  ctx.fillStyle = "yellow";
+  ctx.fillRect(580, 230, 10, 40);
+
+  if (player.x > 580) {
+    nextLevel();
+  }
+
+  requestAnimationFrame(update);
+}
+
+update();
+</script>
+
+</body>
+</html>
